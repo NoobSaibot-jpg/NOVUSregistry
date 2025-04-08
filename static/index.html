@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управління проектами</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+    <style>
+        :root {
+            --primary-color: rgb(27, 60, 43);
+            --primary-hover: rgb(35, 75, 55);
+            --text-on-primary: white;
+            --background-color: #f5f5f5;
+            --card-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--background-color);
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .search-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        .table th {
+            background-color: var(--primary-color);
+            color: var(--text-on-primary);
+            padding: 12px;
+            text-align: left;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            position: relative;
+        }
+
+        .table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .table tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .resizer {
+            position: absolute;
+            right: 0;
+            top: 0;
+            height: 100%;
+            width: 5px;
+            background: rgba(0, 0, 0, 0.1);
+            cursor: col-resize;
+            user-select: none;
+            touch-action: none;
+        }
+
+        .resizer:hover, .resizer.resizing {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+
+        .action-btn {
+            background-color: var(--primary-color);
+            color: var(--text-on-primary);
+            border: none;
+            border-radius: 4px;
+            padding: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+            min-width: 32px;
+            height: 32px;
+        }
+
+        .action-btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .search-button {
+            background-color: var(--primary-color);
+            color: var(--text-on-primary);
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .search-button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: var(--text-on-primary);
+            padding: 16px;
+            margin-bottom: 20px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Пагинация */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .page-size-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .page-size-selector select {
+            padding: 6px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background-color: white;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .page-button {
+            background-color: var(--primary-color);
+            color: var(--text-on-primary);
+            border: none;
+            border-radius: 4px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .page-button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .page-button.active {
+            background-color: var(--primary-hover);
+            font-weight: bold;
+        }
+
+        .page-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        /* Колонки таблицы */
+        .col-id { width: 5%; }
+        .col-filename { width: 15%; }
+        .col-category { width: 10%; }
+        .col-type { width: 10%; }
+        .col-stage { width: 10%; }
+        .col-code { width: 10%; }
+        .col-name { width: 15%; }
+        .col-sheet { width: 8%; }
+        .col-box { width: 8%; }
+        .col-folder { width: 8%; }
+        .col-actions { width: 8%; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .table th, .table td {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            .action-btn {
+                padding: 4px;
+                min-width: 28px;
+                height: 28px;
+            }
+
+            .search-container {
+                padding: 15px;
+            }
+
+            .search-input, .search-button {
+                font-size: 14px;
+            }
+
+            .pagination-container {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .table th, .table td {
+                padding: 6px;
+                font-size: 12px;
+            }
+
+            .action-btn {
+                padding: 3px;
+                min-width: 24px;
+                height: 24px;
+            }
+
+            .header-title {
+                font-size: 20px;
+            }
+
+            .pagination-buttons {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="header-title">
+                <span class="material-icons">folder_open</span>
+                Управління проектами
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="search-container">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="searchInput" class="search-input" placeholder="Пошук по проектах...">
+                <button class="search-button" onclick="searchProjects()">
+                    <span class="material-icons">search</span>
+                    Пошук
+                </button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th class="col-id">ID<div class="resizer"></div></th>
+                        <th class="col-filename">Назва файлу<div class="resizer"></div></th>
+                        <th class="col-category">Категорія<div class="resizer"></div></th>
+                        <th class="col-type">Тип проекту<div class="resizer"></div></th>
+                        <th class="col-stage">Стадія<div class="resizer"></div></th>
+                        <th class="col-code">Код проекту<div class="resizer"></div></th>
+                        <th class="col-name">Назва проекту<div class="resizer"></div></th>
+                        <th class="col-sheet">Аркуш<div class="resizer"></div></th>
+                        <th class="col-box">Коробка<div class="resizer"></div></th>
+                        <th class="col-folder">Папка<div class="resizer"></div></th>
+                        <th class="col-actions">Дії<div class="resizer"></div></th>
+                    </tr>
+                </thead>
+                <tbody id="projectsTable">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination-container">
+            <div class="page-size-selector">
+                <span>Елементів на сторінці:</span>
+                <select id="pageSize" onchange="changePageSize()">
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+            <div class="pagination-controls">
+                <div class="pagination-buttons" id="paginationButtons">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 1;
+        let pageSize = 10;
+        let totalItems = 0;
+
+        // Инициализация изменения размера колонок
+        document.addEventListener('DOMContentLoaded', function() {
+            const resizers = document.querySelectorAll('.resizer');
+            let currentResizer;
+            let currentWidth;
+            let startX;
+
+            resizers.forEach(resizer => {
+                resizer.addEventListener('mousedown', initResize);
+            });
+
+            function initResize(e) {
+                currentResizer = e.target;
+                currentWidth = currentResizer.parentElement.offsetWidth;
+                startX = e.clientX;
+
+                document.addEventListener('mousemove', resize);
+                document.addEventListener('mouseup', stopResize);
+            }
+
+            function resize(e) {
+                const width = currentWidth + (e.clientX - startX);
+                if (width > 50) {
+                    currentResizer.parentElement.style.width = width + 'px';
+                }
+            }
+
+            function stopResize() {
+                document.removeEventListener('mousemove', resize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        });
+
+        function updatePagination(total) {
+            totalItems = total;
+            const totalPages = Math.ceil(total / pageSize);
+            const paginationButtons = document.getElementById('paginationButtons');
+            paginationButtons.innerHTML = '';
+
+            // Кнопка "Назад"
+            const prevButton = document.createElement('button');
+            prevButton.className = 'page-button';
+            prevButton.innerHTML = '<span class="material-icons">chevron_left</span>';
+            prevButton.onclick = () => changePage(currentPage - 1);
+            prevButton.disabled = currentPage === 1;
+            paginationButtons.appendChild(prevButton);
+
+            // Номера страниц
+            for (let i = 1; i <= totalPages; i++) {
+                if (
+                    i === 1 || 
+                    i === totalPages || 
+                    (i >= currentPage - 2 && i <= currentPage + 2)
+                ) {
+                    const button = document.createElement('button');
+                    button.className = `page-button ${i === currentPage ? 'active' : ''}`;
+                    button.textContent = i;
+                    button.onclick = () => changePage(i);
+                    paginationButtons.appendChild(button);
+                } else if (
+                    i === currentPage - 3 || 
+                    i === currentPage + 3
+                ) {
+                    const dots = document.createElement('span');
+                    dots.textContent = '...';
+                    dots.style.padding = '6px 12px';
+                    paginationButtons.appendChild(dots);
+                }
+            }
+
+            // Кнопка "Вперед"
+            const nextButton = document.createElement('button');
+            nextButton.className = 'page-button';
+            nextButton.innerHTML = '<span class="material-icons">chevron_right</span>';
+            nextButton.onclick = () => changePage(currentPage + 1);
+            nextButton.disabled = currentPage === totalPages;
+            paginationButtons.appendChild(nextButton);
+        }
+
+        function changePage(page) {
+            if (page >= 1 && page <= Math.ceil(totalItems / pageSize)) {
+                currentPage = page;
+                loadProjects();
+            }
+        }
+
+        function changePageSize() {
+            pageSize = parseInt(document.getElementById('pageSize').value);
+            currentPage = 1;
+            loadProjects();
+        }
+
+        async function loadProjects(search = '') {
+            const searchInput = document.getElementById('searchInput');
+            const searchValue = search || searchInput.value;
+            
+            const response = await fetch(`/api/projects/?search=${searchValue}&skip=${(currentPage - 1) * pageSize}&limit=${pageSize}`);
+            const data = await response.json();
+            const projects = data.items;
+            const total = data.total;
+
+            const tableBody = document.getElementById('projectsTable');
+            tableBody.innerHTML = '';
+
+            projects.forEach(project => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="col-id">${project.id}</td>
+                    <td class="col-filename" title="${project.file_name}">${project.file_name}</td>
+                    <td class="col-category" title="${project.category}">${project.category}</td>
+                    <td class="col-type" title="${project.project_type}">${project.project_type}</td>
+                    <td class="col-stage" title="${project.stage}">${project.stage}</td>
+                    <td class="col-code" title="${project.project_code_short}">${project.project_code_short}</td>
+                    <td class="col-name" title="${project.project_name}">${project.project_name}</td>
+                    <td class="col-sheet">${project.sheet_number}</td>
+                    <td class="col-box">${project.box_number}</td>
+                    <td class="col-folder">${project.folder_number}</td>
+                    <td class="col-actions">
+                        <div class="action-buttons">
+                            <button class="action-btn" onclick="viewFile(${project.id})" title="Переглянути файл">
+                                <span class="material-icons">visibility</span>
+                            </button>
+                            <button class="action-btn" onclick="downloadFile(${project.id})" title="Завантажити файл">
+                                <span class="material-icons">download</span>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+
+            updatePagination(total);
+        }
+
+        async function viewFile(projectId) {
+            try {
+                const response = await fetch(`/api/projects/${projectId}/download`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    window.open(url, '_blank');
+                } else {
+                    alert('Файл не знайдено');
+                }
+            } catch (error) {
+                console.error('Помилка при перегляді файлу:', error);
+                alert('Сталася помилка при перегляді файлу');
+            }
+        }
+
+        async function downloadFile(projectId) {
+            try {
+                const response = await fetch(`/api/projects/${projectId}/download`);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = response.headers.get('Content-Disposition').split('filename=')[1];
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                } else {
+                    alert('Файл не знайдено');
+                }
+            } catch (error) {
+                console.error('Помилка при завантаженні файлу:', error);
+                alert('Сталася помилка при завантаженні файлу');
+            }
+        }
+
+        function searchProjects() {
+            currentPage = 1;
+            loadProjects();
+        }
+
+        // Завантаження проектів при старті
+        loadProjects();
+    </script>
+</body>
+</html> 
