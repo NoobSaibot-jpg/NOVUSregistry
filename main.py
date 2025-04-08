@@ -27,14 +27,23 @@ def get_resource_path(relative_path):
     return os.path.join(base_path, relative_path)
 
 # Чтение конфигурации
-config = configparser.ConfigParser()
-config_path = get_resource_path('config.ini')
-config.read(config_path)
-HOST = config.get('server', 'host')
-PORT = int(config.get('server', 'port'))
+def load_config():
+    config = configparser.ConfigParser()
+    config_path = get_resource_path('config.ini')
+    config.read(config_path)
+    return {
+        'host': config.get('server', 'host'),
+        'port': int(config.get('server', 'port')),
+        'database_url': config.get('database', 'url')
+    }
+
+# Загружаем конфигурацию
+config = load_config()
+HOST = config['host']
+PORT = config['port']
+DATABASE_URL = config['database_url']
 
 # Настройка базы данных
-DATABASE_URL = config.get('database', 'url')
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
