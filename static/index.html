@@ -480,42 +480,12 @@
             updatePagination(total);
         }
 
-        async function viewFile(projectId) {
-            try {
-                const response = await fetch(`/api/projects/${projectId}/download`);
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    window.open(url, '_blank');
-                } else {
-                    alert('Файл не знайдено');
-                }
-            } catch (error) {
-                console.error('Помилка при перегляді файлу:', error);
-                alert('Сталася помилка при перегляді файлу');
-            }
+        function viewFile(projectId) {
+            window.open(`/api/projects/${projectId}/download?view=true`, '_blank');
         }
 
-        async function downloadFile(projectId) {
-            try {
-                const response = await fetch(`/api/projects/${projectId}/download`);
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = response.headers.get('Content-Disposition').split('filename=')[1];
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    a.remove();
-                } else {
-                    alert('Файл не знайдено');
-                }
-            } catch (error) {
-                console.error('Помилка при завантаженні файлу:', error);
-                alert('Сталася помилка при завантаженні файлу');
-            }
+        function downloadFile(projectId) {
+            window.location.href = `/api/projects/${projectId}/download`;
         }
 
         function searchProjects() {

@@ -136,7 +136,7 @@ async def get_projects(
         db.close()
 
 @app.get("/api/projects/{project_id}/download")
-async def download_file(project_id: int):
+async def download_file(project_id: int, view: bool = False):
     db = SessionLocal()
     try:
         project = db.query(Project).filter(Project.id == project_id).first()
@@ -146,11 +146,43 @@ async def download_file(project_id: int):
         if not os.path.exists(project.file_path):
             raise HTTPException(status_code=404, detail="File not found")
         
-        return FileResponse(
+        # Получаем расширение файла
+        file_name, file_extension = os.path.splitext(project.file_name)
+        
+        # Очищаем имя файла от подчеркиваний в начале и конце
+        clean_name = file_name.strip('_')
+        clean_extension = file_extension.strip('_')
+        clean_filename = f"{clean_name}{clean_extension}"
+        
+        # Отладочная информация
+        print(f"Original filename: {project.file_name}")
+        print(f"Cleaned filename: {clean_filename}")
+        
+        # Определяем MIME-тип в зависимости от расширения
+        mime_types = {
+            '.pdf': 'application/pdf',
+            '.doc': 'application/msword',
+            '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            '.xls': 'application/vnd.ms-excel',
+            '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.txt': 'text/plain',
+        }
+        
+        media_type = mime_types.get(clean_extension.lower(), 'application/octet-stream')
+        
+        response = FileResponse(
             project.file_path,
-            filename=project.file_name,
-            media_type='application/octet-stream'
+            media_type=media_type
         )
+        
+        # Формируем заголовок Content-Disposition без кавычек
+        disposition = f'attachment; filename={clean_filename}'
+        response.headers["Content-Disposition"] = disposition
+        
+        return response
     finally:
         db.close()
 
